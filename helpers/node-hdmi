@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+
+
+#### Variables ==start ####
+
+export PATH="/bin:/usr/bin"
+UNIT="node-hdmi"
+APP_DIR="/usr/local/${UNIT}"
+OLD_PWD=${PWD}
+
+#### Variables ==final ####
+
+
+#### Functions ==start ####
+
+log() {
+	sudo logger -s -t "${UNIT}" "${1}" 2>&1
+}
+
+sleep_msg() {
+	log "Sleeping"
+	sleep 0.5
+}
+
+follow() {
+	sudo journalctl -u ${UNIT} -f -n 5 | sed "s/$(hostname -s)\ ${UNIT}\[.*.]:\ //g"
+}
+
+status() {
+	echo -e "Checking status of ${UNIT}\n"
+	sudo systemctl status ${UNIT}
+}
+
+restart() {
+	stop
+	sleep_msg
+	start
+	sleep_msg
+	status
+}
+
+stop() {
+	log "Stopping ${UNIT}"
+	sudo systemctl stop ${UNIT}
+	sleep_msg
+	status
+}
+
+start() {
+	log "Starting ${UNIT}"
+	sudo systemctl start ${UNIT}
+	sleep_msg
+	status
+}
+
+update() {
+	cd ${APP_DIR}
+
+	GIT_BRANCH="$(git branch | grep '*' | sed 's/^*\ //g')"
+	git fetch origin ${GIT_BRANCH} &> /dev/null
+
+	GIT_LOG="$(git log HEAD..origin/${GIT_BRANCH} --oneline)"
+	[[ -z "${GIT_LOG}" ]] && log "No ${UNIT} update needed" && return
+
+	log "${UNIT} update available!"
+
+	log "Downloading ${UNIT} update"
+	git pull
+
+	log "Performing npm global update"
+	npm -g update
+
+	log "Performing local npm install"
+	npm install
+
+	log "Performing local npm update"
+	npm update
+
+	restart
+
+	cd ${OLD_PWD}
+}
+
+#### Functions ==final ####
+
+${1-status}

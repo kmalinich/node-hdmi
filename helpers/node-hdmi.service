@@ -1,0 +1,21 @@
+[Unit]
+After       = network.target
+Description = node-hdmi daemon
+Requires    = network.target
+
+[Service]
+Nice                 = -19
+OOMScoreAdjust       = -1000
+IOSchedulingPriority = 0
+Group                = pi
+User                 = pi
+Environment          = NODE_PATH=/usr/lib/node_modules:/usr/lib/nodejs:/usr/local/lib/node_modules:/usr/local/node-hdmi/node_modules:/usr/share/javascript
+ExecStart            = /usr/bin/env node --trace-deprecation --throw-deprecation --trace-warnings --preserve-symlinks /usr/local/node-hdmi/run.js
+Restart              = on-failure
+StandardError        = syslog
+StandardOutput       = syslog
+SyslogIdentifier     = node-hdmi
+WorkingDirectory     = /usr/local/node-hdmi
+
+[Install]
+WantedBy = multi-user.target

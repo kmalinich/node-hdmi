@@ -1,0 +1,35 @@
+{
+  "name": "node-hdmi",
+  "version": "0.0.1",
+  "description": "NodeJS-powered HDMI-CEC API",
+  "main": "launch.sh",
+  "devDependencies": {},
+  "author": "kdm <kennygprs@gmail.com>",
+  "license": "ISC",
+  "homepage": "https://github.com/kmalinich/node-hdmi#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kmalinich/node-hdmi.git"
+  },
+  "keywords": [
+    "hdmi",
+    "cec",
+    "hdmi-cec"
+  ],
+  "bugs": {
+    "url": "https://github.com/kmalinich/node-hdmi/issues"
+  },
+  "dependencies": {
+    "domain": "0.0.1",
+    "fs": "0.0.2",
+    "http": "0.0.0",
+    "httpdispatcher": "^2.1.0",
+    "log": "^1.4.0",
+    "net": "^1.0.2",
+    "node-cec": "git+https://git@github.com/kmalinich/node-cec.git",
+    "os": "^0.1.1",
+    "querystring": "^0.2.0",
+    "socket.io": "^1.7.3",
+    "util": "^0.10.3"
+  }
+}
