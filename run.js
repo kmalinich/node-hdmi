@@ -109,6 +109,11 @@ dispatcher.onPost('/hdmi', (request, response) => {
 	HDMI.command(query_string.parse(request.body).command, response);
 });
 
+dispatcher.onGet('/hdmi', (request, response) => {
+	response.writeHead(200, api_header);
+	response.end(JSON.stringify(HDMI.status));
+});
+
 // Error
 dispatcher.onError((request, response) => {
   console.error('[node::API] Error: 404');
