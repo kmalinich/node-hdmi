@@ -4,7 +4,7 @@ A node.js interface for HDMI-CEC, with an API running on port 3001.
 I use it on one of my Raspberry Pi devices for my other project, [node-bmw](https://github.com/kmalinich/node-bmw)
 
 ## Usage
-Issue an POST a command to it on port 3001.  
+Issue an HTTP POST a command to it on port 3001.  
 
 ## Commands
 * `poweron`
