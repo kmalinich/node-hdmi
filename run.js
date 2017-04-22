@@ -4,14 +4,14 @@ log  = require('log-output');
 HDMI = require('HDMI');
 
 // API config - should be moved into API object
-const dispatcher        = new (require('httpdispatcher'));
-const http              = require('http');
-const query_string      = require('querystring');
-var api_socket_key_last = 0;
-var api_socket_map      = {};
-socket_server           = require('socket-server');
-api_server              = http.createServer(api_handler);
-var api_header          = {
+dispatcher          = new (require('httpdispatcher'));
+http                = require('http');
+query_string        = require('querystring');
+api_socket_key_last = 0;
+api_socket_map      = {};
+socket_server       = require('socket-server');
+api_server          = http.createServer(api_handler);
+api_header          = {
   'Content-Type'  : 'application/json',
   'Cache-Control' : 'no-cache',
 }
@@ -101,18 +101,12 @@ function shutdown_api_server(callback) {
 
 // API handler function
 function api_handler(request, response) {
-  log.msg({
-    src : 'API',
-    msg : request.method+' request: '+request.url,
-  });
   dispatcher.dispatch(request, response);
 }
 
 // HDMI POST request
 dispatcher.onPost('/hdmi', (request, response) => {
-  HDMI.command(query_string.parse(request.body).command);
-  response.writeHead(200, api_header);
-  response.end(JSON.stringify({ commanded : query_string.parse(request.body).command, status : 'ok' }));
+	HDMI.command(query_string.parse(request.body).command, response);
 });
 
 // Error
