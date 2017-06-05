@@ -5,7 +5,6 @@ app_path = __dirname;
 os   = require('os');
 log  = require('log-output');
 json = require('json');
-HDMI = require('HDMI');
 
 // WebSockets
 // socket_client = require('socket-client');
@@ -23,20 +22,29 @@ api_header          = {
 'Cache-Control' : 'no-cache',
 }
 
+// Load HDMI library
+function hdmi_load(hdmi_load_callback = null) {
+	HDMI = require('HDMI');
+
+	if (typeof hdmi_load_callback === 'function') { hdmi_load_callback(); }
+	hdmi_load_callback = undefined;
+}
 
 // Global startup
 function startup() {
 	log.msg({
-		src : 'run',
+		src : module_name,
 		msg : 'Starting',
 	});
 
 	json.read(() => { // Read JSON config and status files
 		api_startup(() => { // Open API server
-			HDMI.startup(() => { // Open HDMI-CEC
-				log.msg({
-					src : 'run',
-					msg : 'Started',
+			hdmi_load(() => { // Load HDMI library
+				HDMI.startup(() => { // Open HDMI-CEC
+					log.msg({
+						src : module_name,
+						msg : 'Started',
+					});
 				});
 			});
 		});
@@ -46,7 +54,7 @@ function startup() {
 // Global shutdown
 function shutdown() {
 	log.msg({
-		src : 'run',
+		src : module_name,
 		msg : 'Shutting down',
 	});
 
@@ -123,7 +131,17 @@ dispatcher.onPost('/hdmi', (request, response) => {
 
 dispatcher.onGet('/hdmi', (request, response) => {
 	response.writeHead(200, api_header);
-	response.end(JSON.stringify(HDMI.status));
+	response.end(JSON.stringify(status.hdmi));
+});
+
+dispatcher.onGet('/config', (request, response) => {
+	response.writeHead(200, api_header);
+	response.end(JSON.stringify(config));
+});
+
+dispatcher.onGet('/status', (request, response) => {
+	response.writeHead(200, api_header);
+	response.end(JSON.stringify(status));
 });
 
 // Error
@@ -141,7 +159,7 @@ dispatcher.onError((request, response) => {
 // Shutdown events/signals
 process.on('SIGTERM', () => {
 	log.msg({
-		src : 'run',
+		src : module_name,
 		msg : 'Received SIGTERM, launching shutdown()',
 	});
 	shutdown();
@@ -149,7 +167,7 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
 	log.msg({
-		src : 'run',
+		src : module_name,
 		msg : 'Received SIGINT, launching shutdown()',
 	});
 	shutdown();
@@ -157,7 +175,7 @@ process.on('SIGINT', () => {
 
 process.on('SIGPIPE', () => {
 	log.msg({
-		src : 'run',
+		src : module_name,
 		msg : 'Received SIGPIPE, launching shutdown()',
 	});
 	shutdown();
@@ -165,7 +183,7 @@ process.on('SIGPIPE', () => {
 
 process.on('exit', () => {
 	log.msg({
-		src : 'run',
+		src : module_name,
 		msg : 'Shut down',
 	});
 });
