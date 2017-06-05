@@ -1,12 +1,35 @@
 #!/usr/bin/env bash
 
+#### Config ==start ####
+
+# Fail on bad exit code
+set -e
+
+#### Config ==final ####
+
 
 #### Variables ==start ####
 
-export PATH="/bin:/usr/bin"
-UNIT="node-hdmi"
-APP_DIR="/usr/local/${UNIT}"
-OLD_PWD=${PWD}
+export PATH="/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin"
+
+APP="$(basename ${0})"
+APP_DIR="$(dirname $(readlink -f ${0}) | sed 's/\/helpers//g')"
+APP_FILE="${APP_DIR}/main.js"
+APP_USER="pi"
+
+APP_NM_DIR="${APP_DIR}/node_modules"
+
+SYSTEMD_DIR="/etc/systemd/system"
+SYSTEMD_APP="${APP}.service"
+SYSTEMD_APP_FILE="${SYSTEMD_DIR}/${SYSTEMD_APP}"
+
+UNAME="$(uname)"
+
+ARRAY_DIR_SYMLINK=(
+lib
+)
+
+[[ "${APP}" == "node-bmw-client" ]] && ARRAY_DIR_SYMLINK=(${ARRAY_DIR_SYMLINK[@]} modules)
 
 #### Variables ==final ####
 
@@ -14,7 +37,12 @@ OLD_PWD=${PWD}
 #### Functions ==start ####
 
 log() {
-	sudo logger -s -t "${UNIT}" "${1}" 2>&1
+	if [[ "${UNAME}" != "Linux" ]]; then
+		echo "[${APP}] ${1}"
+		return
+	fi
+
+	sudo logger -s -t "${APP}" "${1}" 2>&1
 }
 
 sleep_msg() {
@@ -22,16 +50,33 @@ sleep_msg() {
 	sleep 0.5
 }
 
+debug() {
+	stop > /dev/null 2>&1
+	export NODE_ENV="development"
+	/usr/bin/env node --trace-warnings --preserve-symlinks ${APP_FILE}
+	unset NODE_ENV
+}
+
+launch() {
+	stop > /dev/null 2>&1
+	export NODE_ENV="production"
+	/usr/bin/env node --throw-deprecation --trace-warnings --preserve-symlinks ${APP_FILE}
+	unset NODE_ENV
+}
+
 follow() {
-	sudo journalctl -u ${UNIT} -f -n 5 | sed "s/$(hostname -s)\ ${UNIT}\[.*.]:\ //g"
+	[[ "${UNAME}" != "Linux" ]] && return
+	sudo journalctl -u ${APP} -f -n 5 --all | sed "s/$(hostname -s)\ ${APP}\[.*.]:\ //g"
 }
 
 status() {
-	echo -e "Checking status of ${UNIT}\n"
-	sudo systemctl status ${UNIT}
+	[[ "${UNAME}" != "Linux" ]] && return
+	echo -e "Checking status of ${APP}\n"
+	sudo systemctl status ${APP}
 }
 
 restart() {
+	[[ "${UNAME}" != "Linux" ]] && return
 	stop
 	sleep_msg
 	start
@@ -39,18 +84,125 @@ restart() {
 	status
 }
 
-stop() {
-	log "Stopping ${UNIT}"
-	sudo systemctl stop ${UNIT}
+uninstall() {
+	[[ "${UNAME}" != "Linux" ]] && return
+	log "Uninstalling ${SYSTEMD_APP}"
+	if [[ -s ${SYSTEMD_APP_FILE} ]]; then
+		if ! sudo rm -f ${SYSTEMD_APP_FILE}; then
+			log "Failed to remove existing systemd unit file, cannot continue"
+			exit 1
+		fi
+	fi
+
+	if ! sudo systemctl daemon-reload; then
+		log "Failed to reload systemd, cannot continue"
+		exit 3
+	fi
+
+	log "Uninstalled systemd unit successfully"
+}
+
+install() {
+	[[ "${UNAME}" != "Linux" ]] && return
+	log "Installing ${SYSTEMD_APP}"
+	if [[ -s ${SYSTEMD_APP_FILE} ]]; then
+		if ! sudo rm -f ${SYSTEMD_APP_FILE}; then
+			log "Failed to remove existing systemd unit file, cannot continue"
+			exit 1
+		fi
+	fi
+
+	if ! sudo cp ${APP_DIR}/helpers/${SYSTEMD_APP} ${SYSTEMD_APP_FILE}; then
+		log "Failed to copy systemd unit file, cannot continue"
+		exit 2
+	fi
+
+	if ! sudo systemctl daemon-reload; then
+		log "Failed to reload systemd, cannot continue"
+		exit 3
+	fi
+
+	log "Installed systemd unit successfully"
+}
+
+disable() {
+	[[ "${UNAME}" != "Linux" ]] && return
+	if ! sudo systemctl -q is-enabled ${SYSTEMD_APP}; then
+		log "${SYSTEMD_APP} is already disabled"
+		return
+	fi
+
+	log "Disabling ${SYSTEMD_APP}"
+	sudo systemctl disable ${SYSTEMD_APP}
 	sleep_msg
-	status
+
+	if ! sudo systemctl -q is-enabled ${SYSTEMD_APP}; then
+		log "Disabled ${SYSTEMD_APP} successfully"
+	else
+		log "Failed to disable ${SYSTEMD_APP}"
+	fi
+}
+
+enable() {
+	[[ "${UNAME}" != "Linux" ]] && return
+	if sudo systemctl -q is-enabled ${SYSTEMD_APP}; then
+		log "${SYSTEMD_APP} is already enabled"
+		return
+	fi
+
+	if [[ ! -s ${SYSTEMD_APP_FILE} ]]; then
+		install
+	fi
+
+	log "Enabling ${SYSTEMD_APP}"
+	sudo systemctl enable ${SYSTEMD_APP}
+	sleep_msg
+
+	if sudo systemctl -q is-enabled ${SYSTEMD_APP}; then
+		log "Enabled ${SYSTEMD_APP} successfully"
+	else
+		log "Failed to enable ${SYSTEMD_APP}"
+	fi
+}
+
+stop() {
+	[[ "${UNAME}" != "Linux" ]] && return
+	if ! sudo systemctl -q is-active ${SYSTEMD_APP}; then
+		log "${SYSTEMD_APP} is already inactive"
+		return
+	fi
+
+	log "Stopping ${SYSTEMD_APP}"
+	sudo systemctl stop ${SYSTEMD_APP}
+	sleep_msg
+
+	if ! sudo systemctl -q is-active ${SYSTEMD_APP}; then
+		log "Stopped ${SYSTEMD_APP} successfully"
+	else
+		log "Failed to stop ${SYSTEMD_APP}"
+		echo
+		status
+	fi
 }
 
 start() {
-	log "Starting ${UNIT}"
-	sudo systemctl start ${UNIT}
+	[[ "${UNAME}" != "Linux" ]] && return
+	if sudo systemctl -q is-active ${SYSTEMD_APP}; then
+		log "${SYSTEMD_APP} is already active"
+		return
+	fi
+
+	log "Starting ${SYSTEMD_APP}"
+	sudo systemctl start ${SYSTEMD_APP}
 	sleep_msg
-	status
+
+	if sudo systemctl -q is-active ${SYSTEMD_APP}; then
+		log "Started ${SYSTEMD_APP} successfully"
+	else
+		log "Failed to start ${SYSTEMD_APP}"
+		echo
+		status
+	fi
 }
 
 update() {
@@ -60,25 +212,39 @@ update() {
 	git fetch origin ${GIT_BRANCH} &> /dev/null
 
 	GIT_LOG="$(git log HEAD..origin/${GIT_BRANCH} --oneline)"
-	[[ -z "${GIT_LOG}" ]] && log "No ${UNIT} update needed" && return
+	[[ -z "${GIT_LOG}" ]] && log "No ${APP} update needed" && return
 
-	log "${UNIT} update available!"
+	log "${APP} update available"
 
-	log "Downloading ${UNIT} update"
+	log "Downloading ${APP} update"
 	git pull
 
-	log "Performing npm global update"
-	npm -g update
-
-	log "Performing local npm install"
+	log "Performing npm install"
 	npm install
 
-	log "Performing local npm update"
-	npm update
-
 	restart
+}
 
-	cd ${OLD_PWD}
+rebuild() {
+	cd ${APP_DIR}
+
+	log "Removing directory '${APP_NM_DIR}'"
+	rm -rf ${APP_NM_DIR}
+
+	log "Performing npm install"
+	npm install
+
+	if [[ "${UNAME}" == "Linux" ]]; then
+		log "Fixing permissions on directory '${APP_NM_DIR}'"
+		sudo chown -R ${APP_USER}:${APP_USER} ${APP_NM_DIR}
+	fi
+
+	cd ${APP_NM_DIR}
+
+	for DIR_SYMLINK in ${ARRAY_DIR_SYMLINK[@]}; do
+		log "Re-symlinking .js file(s) under directory '${DIR_SYMLINK}'"
+		ln -fs ../${DIR_SYMLINK}/*.js .
+	done
 }
 
 #### Functions ==final ####

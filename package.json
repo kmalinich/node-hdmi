@@ -24,12 +24,13 @@
     "fs": "0.0.2",
     "http": "0.0.0",
     "httpdispatcher": "^2.1.0",
+    "jsonfile": "^3.0.0",
     "log": "^1.4.0",
     "net": "^1.0.2",
     "node-cec": "git+https://git@github.com/kmalinich/node-cec.git",
     "os": "^0.1.1",
     "querystring": "^0.2.0",
-    "socket.io": "^2.0.1",
+    "socket.io": "^2.0.2",
     "util": "^0.10.3"
   }
 }
