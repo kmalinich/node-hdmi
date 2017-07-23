@@ -18,8 +18,8 @@ api_socket_key_last = 0;
 api_socket_map      = {};
 api_server          = http.createServer(api_handler);
 api_header          = {
-'Content-Type'  : 'application/json',
-'Cache-Control' : 'no-cache',
+	'Content-Type'  : 'application/json',
+	'Cache-Control' : 'no-cache',
 }
 
 // Load HDMI library
