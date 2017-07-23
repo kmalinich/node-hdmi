@@ -14,7 +14,7 @@ Issue an HTTP POST to port 3001 to command it, or an HTTP GET to port 3001 to ge
 
 ## Example HTTP POST curl
 ```json
-curl -s -X POST http://localhost:3001/hdmi -d 'command=poweron' | jq .
+curl -s -d 'command=poweron' http://localhost:3001/hdmi | jq .
 {
   "command": "powerstatus",
   "response": "Requesting power status",
@@ -24,7 +24,7 @@ curl -s -X POST http://localhost:3001/hdmi -d 'command=poweron' | jq .
 
 ## Example HTTP GET curl
 ```json
-curl -s -X GET http://localhost:3001/hdmi | jq .
+curl -s http://localhost:3001/hdmi | jq .
 {
   "active_source": null,
   "client_ready": true,
