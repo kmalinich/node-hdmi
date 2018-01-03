@@ -1,32 +1,33 @@
-var module_name = __filename.slice(__dirname.length + 1, -3);
+let module_name = __filename.slice(__dirname.length + 1, -3);
 app_path = __dirname;
 
 // Global libraries
-os   = require('os');
-log  = require('log-output');
-json = require('json');
+json   = require('json');
+log    = require('log-output');
+os     = require('os');
+update = require('update');
 
 // WebSockets
 // socket_client = require('socket-client');
 // socket_server = require('socket-server');
 
 // API config - should be moved into API object
-dispatcher          = new (require('httpdispatcher'));
+dispatcher          = new (require('httpdispatcher'))();
 http                = require('http');
 query_string        = require('querystring');
 api_socket_key_last = 0;
 api_socket_map      = {};
 api_server          = http.createServer(api_handler);
 api_header          = {
-'Content-Type'  : 'application/json',
-'Cache-Control' : 'no-cache',
-}
+	'Content-Type'  : 'application/json',
+	'Cache-Control' : 'no-cache',
+};
 
 // Load HDMI library
 function hdmi_load(hdmi_load_callback = null) {
 	HDMI = require('HDMI');
 
-	if (typeof hdmi_load_callback === 'function') { hdmi_load_callback(); }
+	typeof hdmi_load_callback === 'function' && hdmi_load_callback();
 	hdmi_load_callback = undefined;
 }
 
@@ -40,7 +41,7 @@ function startup() {
 	json.read(() => { // Read JSON config and status files
 		api_startup(() => { // Open API server
 			hdmi_load(() => { // Load HDMI library
-				HDMI.startup(() => { // Open HDMI-CEC
+				HDMI.init(() => { // Open HDMI-CEC
 					log.msg({
 						src : module_name,
 						msg : 'Started',
@@ -59,7 +60,7 @@ function shutdown() {
 	});
 
 	json.write(() => { // Write JSON config and status files
-		HDMI.shutdown(() => { // Close HDMI-CEC
+		HDMI.term(() => { // Close HDMI-CEC
 			api_shutdown(() => { // Close API server
 				process.exit();
 			});
@@ -76,15 +77,15 @@ function api_startup(api_startup_callback = null) {
 	api_server.listen(config.server.port, () => {
 		log.msg({
 			src : 'API',
-			msg : 'API server up, port '+config.server.port,
+			msg : 'API server up, port ' + config.server.port,
 		});
 
-		if (typeof api_startup_callback === 'function') { api_startup_callback(); }
+		typeof api_startup_callback === 'function' && api_startup_callback();
 		api_startup_callback = undefined;
 
 		api_server.on('connection', (api_socket) => {
 			// Generate a new, unique api_socket-key
-			var api_socket_key = ++api_socket_key_last;
+			let api_socket_key = ++api_socket_key_last;
 
 			// Add api_socket when it is connected
 			api_socket_map[api_socket_key] = api_socket;
@@ -114,7 +115,7 @@ function api_shutdown(api_shutdown_callback = null) {
 			msg : 'Stopped',
 		});
 
-		if (typeof api_shutdown_callback === 'function') { api_shutdown_callback(); }
+		typeof api_shutdown_callback === 'function' && api_shutdown_callback();
 		api_shutdown_callback = undefined;
 	});
 }
