@@ -10,24 +10,13 @@
 		"eslint:recommended"
 	],
 	"globals": {
-		"HDMI": true,
-		"api_header": true,
-		"api_server": true,
-		"api_socket_key_last": true,
-		"api_socket_map": true,
+		"api": true,
 		"app_path": true,
 		"config": true,
-		"config_default": true,
-		"dispatcher": true,
-		"http": true,
+		"hdmi": true,
 		"json": true,
 		"log": true,
-		"os": true,
-		"pad": true,
-		"query_string": true,
-		"socket": true,
 		"status": true,
-		"status_default": true,
 		"update": true
 	},
 	"parserOptions": {

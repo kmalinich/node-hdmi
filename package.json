@@ -4,22 +4,17 @@
 		"url": "https://github.com/kmalinich/node-hdmi/issues"
 	},
 	"dependencies": {
+		"callers-path": "^1.0.5",
 		"chalk": "^2.3.0",
 		"defaults-deep": "^0.2.3",
-		"domain": "0.0.1",
-		"fs": "0.0.2",
+		"express": "^4.16.2",
 		"http": "0.0.0",
-		"httpdispatcher": "^2.1.1",
 		"jsonfile": "^4.0.0",
-		"log": "^1.4.0",
 		"multipad": "^1.1.1",
-		"net": "^1.0.2",
 		"node-cec": "git+https://git@github.com/kmalinich/node-cec.git",
 		"object-path": "^0.11.4",
-		"os": "^0.1.1",
-		"querystring": "^0.2.0",
 		"socket.io": "^2.0.4",
-		"util": "^0.10.3"
+		"trucolor": "^0.6.6"
 	},
 	"description": "NodeJS-powered HDMI-CEC API",
 	"devDependencies": {},
@@ -35,6 +30,9 @@
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/kmalinich/node-hdmi.git"
+	},
+	"scripts": {
+		"postinstall": "/usr/bin/env bash ./cp-v8-v9.sh"
 	},
 	"version": "0.0.1"
 }
